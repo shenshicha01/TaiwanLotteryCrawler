@@ -33,7 +33,7 @@ jobs:
       - name: Generate latest.json
         run: |
           python - <<'PY'
-          from taiwanlottery import SuperLotto638
+          from TaiwanLottery import SuperLotto638
           import json, pathlib
           data = SuperLotto638().latest()
           path = pathlib.Path('data/superlotto638')
