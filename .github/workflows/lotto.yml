@@ -1,44 +1,44 @@
 name: Crawl SuperLotto638 latest
 
 on:
-  schedule:
-    - cron: '0 15 * * 1,4'      # 每週一、四 23:00 台灣時間
-  workflow_dispatch:            # 允許手動觸發
-
-permissions:                    # 讓 GitHub Actions 有權寫回 repo
-  contents: write
+schedule:
+  - cron: '0 15 * * 1,4' # 每週一、四 23:00 (UTC+8)
+  workflow_dispatch:
+  
+permissions:
+contents: write # 讓 workflow 有權 push
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - uses: actions/checkout@v4
-
-      # ① 安裝 Python 與爬蟲套件（從 GitHub 來源）
+    - uses: actions/checkout@v4
+      
+      # 安裝爬蟲（從 GitHub 來源）
       - name: Set up Python & install crawler
-        run: |
-          python -m pip install --upgrade pip
-          pip install git+https://github.com/stu01509/TaiwanLotteryCrawler.git
+      run: |
+      python -m pip install --upgrade pip
+      pip install git+https://github.com/stu01509/TaiwanLotteryCrawler.git
 
-      # ② 產生 latest.json
+      # 產生 latest.json
       - name: Generate latest.json
-        run: |
-          python - <<'PY'
-          from taiwanlottery import SuperLotto638
-          import json, pathlib
-          data = SuperLotto638().latest()
-          path = pathlib.Path('data/superlotto638')
-          path.mkdir(parents=True, exist_ok=True)
-          with open(path / 'latest.json', 'w', encoding='utf-8') as f:
-              json.dump(data, f, ensure_ascii=False)
-          PY
-
-      # ③ Commit 並推回 master
+      run: |
+      python - <<'PY'
+      from taiwanlottery import SuperLotto638
+      import json, pathlib
+      data = SuperLotto638().latest()
+      path = pathlib.Path('data/superlotto638')
+      path.mkdir(parents=True, exist_ok=True)
+      with open(path / 'latest.json', 'w', encoding='utf-8') as f:
+      json.dump(data, f, ensure_ascii=False)
+      PY
+      
+      # Commit & push 回 master
       - name: Commit & push
-        run: |
-          git config user.name  "github-actions"
-          git config user.email "actions@users.noreply.github.com"
-          git add data/superlotto638/latest.json
-          git commit -m "auto: update latest superlotto638" || echo "no changes"
-          git push
+      run: |
+      git config user.name  github-actions
+      git config user.email actions@users.noreply.github.com
+      git add data/superlotto638/latest.json
+      git commit -m "auto: update superlotto638" || echo "no changes"
+      git push
