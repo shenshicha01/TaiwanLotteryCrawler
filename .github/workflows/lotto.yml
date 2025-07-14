@@ -2,18 +2,26 @@ name: Crawl SuperLotto638 latest
 
 on:
   schedule:
-    - cron: '0 15 * * 1,4'   # 每週一、四 23:00 (UTC+8)
-  workflow_dispatch:         # 可手動點 Run
+    - cron: '0 15 * * 1,4'      # 每週一、四 23:00 台灣時間
+  workflow_dispatch:            # 允許手動觸發
+
+permissions:                    # 讓 GitHub Actions 有權寫回 repo
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install crawler
-        run: pip install taiwanlottery
+      # ① 安裝 Python 與爬蟲套件（從 GitHub 來源）
+      - name: Set up Python & install crawler
+        run: |
+          python -m pip install --upgrade pip
+          pip install git+https://github.com/stu01509/TaiwanLotteryCrawler.git
 
+      # ② 產生 latest.json
       - name: Generate latest.json
         run: |
           python - <<'PY'
@@ -26,9 +34,11 @@ jobs:
               json.dump(data, f, ensure_ascii=False)
           PY
 
-      - name: Commit & Push
+      # ③ Commit 並推回 master
+      - name: Commit & push
         run: |
           git config user.name  "github-actions"
           git config user.email "actions@users.noreply.github.com"
           git add data/superlotto638/latest.json
           git commit -m "auto: update latest superlotto638" || echo "no changes"
+          git push
