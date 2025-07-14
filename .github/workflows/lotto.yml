@@ -4,45 +4,36 @@ on:
   schedule:
     # 每週一、四 23:00（台灣時間）
     - cron: '0 15 * * 1,4'
-  workflow_dispatch:          # 允許手動執行
+  workflow_dispatch:
 
 permissions:
-  contents: write             # 讓 Actions 可以 git push
+  contents: write                 # 讓 Actions 可以 push 回 repo
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) 取回程式碼
       - uses: actions/checkout@v4
 
-      # 2) 安裝 Python 3.11
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+      # ① 安裝 requests（Runner 通常已內建，但保險起見）
+      - name: Ensure requests
+        run: python -m pip install --upgrade requests
 
-      # 3) 安裝爬蟲（直接從 GitHub）
-      - name: Install crawler
-        run: |
-          python -m pip install --upgrade pip
-          pip install git+https://github.com/stu01509/TaiwanLotteryCrawler.git
-
-      # 4) 產生 latest.json
+      # ② 直接抓官方 JSON，取最新一期
       - name: Generate latest.json
         run: |
           python - <<'PY'
-          from TaiwanLottery import SuperLotto638
-          import json, pathlib
-          data = SuperLotto638().latest()
+          import json, pathlib, requests
+          url = 'https://www.taiwanlottery.com.tw/Lotto/SuperLotto638/history.aspx?type=history&format=json'
+          data = requests.get(url, timeout=30).json()['list'][0]
           path = pathlib.Path('data/superlotto638')
           path.mkdir(parents=True, exist_ok=True)
           with open(path / 'latest.json', 'w', encoding='utf-8') as f:
               json.dump(data, f, ensure_ascii=False)
           PY
 
-      # 5) Commit 並推回 master
+      # ③ Commit & push
       - name: Commit & push
         run: |
           git config user.name  github-actions
