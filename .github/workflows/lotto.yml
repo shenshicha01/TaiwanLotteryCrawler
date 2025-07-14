@@ -1,0 +1,34 @@
+name: Crawl SuperLotto638 latest
+
+on:
+  schedule:
+    - cron: '0 15 * * 1,4'   # 每週一、四 23:00 (UTC+8)
+  workflow_dispatch:         # 可手動點 Run
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install crawler
+        run: pip install taiwanlottery
+
+      - name: Generate latest.json
+        run: |
+          python - <<'PY'
+          from taiwanlottery import SuperLotto638
+          import json, pathlib
+          data = SuperLotto638().latest()
+          path = pathlib.Path('data/superlotto638')
+          path.mkdir(parents=True, exist_ok=True)
+          with open(path / 'latest.json', 'w', encoding='utf-8') as f:
+              json.dump(data, f, ensure_ascii=False)
+          PY
+
+      - name: Commit & Push
+        run: |
+          git config user.name  "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/superlotto638/latest.json
+          git commit -m "auto: update latest superlotto638" || echo "no changes"
